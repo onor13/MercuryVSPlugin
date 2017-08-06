@@ -1,0 +1,6 @@
+MercuryLangPlugin/bin/*
+MercuryLangPlugin/obj/*
+.vs/MercuryLangPlugin/*
+
+# NuGet package directory
+/packages/
