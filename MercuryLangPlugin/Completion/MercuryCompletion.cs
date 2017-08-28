@@ -45,7 +45,7 @@ namespace MercuryLangPlugin.Completion
                     currentToken = token;
                     currentTokenIdx = i;
                 }
-                if (token.EndColumn > token.StartColumn && !string.IsNullOrWhiteSpace(token.Value))
+                if (token.EndColumn > token.StartColumn && (token.Type== MercuryTokenType.Decl || token.Type == MercuryTokenType.Variable) && !string.IsNullOrWhiteSpace(token.Value))
                 {
                     strList.Add(token.Value);
                 }
