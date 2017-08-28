@@ -10,6 +10,8 @@ using Microsoft.VisualStudio.Text.Editor;
 using MercuryLangPlugin.SyntaxAnalysis;
 using MercuryLangPlugin.Text;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace MercuryLangPlugin.Commands
 {
@@ -156,7 +158,7 @@ namespace MercuryLangPlugin.Commands
             if (string.IsNullOrWhiteSpace(token))
                 return;
 
-            List<Tuple<string, MercuryToken>> allReferences = new List<Tuple<string, MercuryToken>>();
+            ConcurrentBag<Tuple<string, MercuryToken>> allReferences = new ConcurrentBag<Tuple<string, MercuryToken>>();
             EnvDTE80.DTE2 dte = Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
 
             if (dte == null || dte.ActiveDocument == null || dte.ActiveDocument.Object() == null || !(dte.ActiveDocument.Object() is TextDocument))
@@ -207,27 +209,26 @@ namespace MercuryLangPlugin.Commands
                 }
                 // Perform the required action on each file here.
                 // Modify this block to perform your required task.
-                foreach (string file in files)
+                Parallel.ForEach(files, (file) =>
                 {
                     try
-                    {                   
+                    {
                         parsedText = MercuryVSPackage.ParsedCache.GetFromFullPath(file);
-                        foreach(var mercuryToken in parsedText.Tokens)
+                        foreach (var mercuryToken in parsedText.Tokens)
                         {
-                            if (mercuryToken.Type == MercuryTokenType.Identifier && token.Equals(mercuryToken.Value)){
+                            if (mercuryToken.Type == MercuryTokenType.Identifier && token.Equals(mercuryToken.Value))
+                            {
                                 allReferences.Add(new Tuple<string, MercuryToken>(file, mercuryToken));
                             }
                         }
-
                     }
                     catch (System.IO.FileNotFoundException)
                     {
                         // If file was deleted by a separate application
                         //  or thread since the call to TraverseTree()
                         // then just continue.
-                        continue;
                     }
-                }
+                });
 
                 // Push the subdirectories onto the stack for traversal.
                 // This could also be done before handing the files.
