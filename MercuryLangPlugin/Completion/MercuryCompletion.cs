@@ -45,12 +45,13 @@ namespace MercuryLangPlugin.Completion
                     currentToken = token;
                     currentTokenIdx = i;
                 }
-                if (token.EndColumn > token.StartColumn && (token.Type== MercuryTokenType.Decl || token.Type == MercuryTokenType.Variable) && !string.IsNullOrWhiteSpace(token.Value))
+                if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
                 {
                     strList.Add(token.Value);
                 }
             }
             compList = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
+
             string fileFullPath;
             ParsedText importParsedText;
             if (currentToken.Type == MercuryTokenType.Dot && currentTokenIdx > 0)
@@ -58,21 +59,25 @@ namespace MercuryLangPlugin.Completion
                 MercuryToken beforeDot = parsedText.Tokens[currentTokenIdx - 1];
                 if (!string.IsNullOrWhiteSpace(beforeDot.Value))
                 {
-                    strList = new SortedSet<string>();
                     foreach (string import in parsedText.Imports)
                     {
                         if (import.Equals(beforeDot.Value))
                         {
                             if (MercuryVSPackage.ParsedCache.GetFromImportName(beforeDot.Value, out fileFullPath, out importParsedText))
                             {
-                                foreach (MercuryToken token in importParsedText.LocalDeclarations)
-                                {
-                                    strList.Add(token.Value);
-                                }
+                                compList.AddRange(importParsedText.CompletionsAvailableFromOutside);
                             }
                             break;
                         }
                     }
+                    completionSets.Add(new CompletionSet(
+                        "ModuleDeclarations",
+                        "ModuleDeclarations",
+                        this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
+                            session),
+                        compList,
+                        null));
+                    return;
                 }
             }
             else
@@ -81,17 +86,12 @@ namespace MercuryLangPlugin.Completion
                 {
                     if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
                     {
-                        foreach (MercuryToken token in importParsedText.LocalDeclarations)
-                        {
-                            if (token.EndColumn > token.StartColumn && token.Type != MercuryTokenType.Keyword && !string.IsNullOrWhiteSpace(token.Value))
-                            {
-                                strList.Add(token.Value);
-                            }
-                        }
+                        compList.AddRange(importParsedText.CompletionsAvailableFromOutside);
                     }
                 }
 
             }
+            compList.AddRange(parsedText.CompletionsAvailableFromOutside);
             foreach (string str in strList)
             {
                 compList.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(str, str, str, null, null));
