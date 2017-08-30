@@ -55,11 +55,11 @@ namespace MercuryLangPlugin.Commands
                     {
                         return VSConstants.S_OK;
                     }
-                    if(fileFullPath != null)
+                    if (fileFullPath != null)
                     {
                         dte.ItemOperations.OpenFile(fileFullPath, EnvDTE.Constants.vsViewKindCode);
                     }
-                    
+
                     ((TextSelection)dte.ActiveDocument.Selection).MoveToLineAndOffset(AdjustLineNumber(declarationToken.LineNumber), AdjustOffset(declarationToken.EndColumn));
                     return (int)VSConstants.S_OK;
                 }
@@ -80,6 +80,11 @@ namespace MercuryLangPlugin.Commands
             {
                 if (m_nextTarget != null)
                 {
+                    EnvDTE80.DTE2 dte = Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
+                    if (dte == null || dte.ActiveDocument == null || dte.ActiveDocument.Object() == null || !(dte.ActiveDocument.Object() is TextDocument))
+                    {
+                        MercuryVSPackage.ParsedCache.setDirty(dte.ActiveDocument.FullName);
+                    }
                     return m_nextTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
                 }
             }
@@ -165,7 +170,7 @@ namespace MercuryLangPlugin.Commands
             {
                 return;
             }
-         
+
             ParsedText parsedText = MercuryVSPackage.ParsedCache.GetFromFullPath(dte.ActiveDocument.FullName);
 
             if (string.IsNullOrEmpty(MercuryVSPackage.MercuryProjectDir))
@@ -250,11 +255,11 @@ namespace MercuryLangPlugin.Commands
             pane.Activate();
             pane.OutputString("Find results:\n");
 
-            foreach(var pair in allReferences)
+            foreach (var pair in allReferences)
             {
                 pane.OutputString(FormatReference(pair.Item1, AdjustLineNumber(pair.Item2.LineNumber), AdjustOffset(pair.Item2.EndColumn)));
             }
-          
+
             string projectFolder = MercuryVSPackage.MercuryProjectDir ?? "<unknown>";
             pane.OutputString("\nRemark:\nSearches in " + projectFolder);
         }

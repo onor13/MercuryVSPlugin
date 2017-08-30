@@ -10,6 +10,10 @@ namespace MercuryLangPlugin.SyntaxAnalysis
         public HashSet<string> Imports { get; private set; }
         HashSet<MercuryToken> declarations; //TODO: separated func/pred declaration and type/typeclass
 
+        public ParsedText(string filePath):this(new StreamReader(filePath))
+        {
+        }
+
         public ParsedText(TextReader textReader):this(GetLines(textReader))
         {            
         }
@@ -45,9 +49,26 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             return lines;
         }
 
-        public IEnumerable<MercuryToken> LocalDeclarations
+        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> completionsAvailableFromOutside = null;
+
+        public IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> CompletionsAvailableFromOutside
         {
-            get { return declarations; }
+            get
+            {
+                if(completionsAvailableFromOutside == null)
+                {
+                    completionsAvailableFromOutside = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
+                    foreach (var token in declarations)
+                    {
+                        if (token.EndColumn > token.StartColumn && token.Type != MercuryTokenType.Keyword && !string.IsNullOrWhiteSpace(token.Value))
+                        {
+                            completionsAvailableFromOutside.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(token.Value, token.Value, token.Value, null, null));
+                        }
+                    }
+                    
+                }
+                return completionsAvailableFromOutside;
+            }
         }
 
         /// <summary>

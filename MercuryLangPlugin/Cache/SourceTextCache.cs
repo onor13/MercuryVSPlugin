@@ -12,7 +12,7 @@ namespace MercuryLangPlugin.Text
         {
             sources = new ConditionalWeakTable<ITextSnapshot, SourceText>();
         }
-        public  SourceText Get(ITextSnapshot textSnapshot)
+        public SourceText Get(ITextSnapshot textSnapshot)
         {
             SourceText sourceText = null;
             if (sources.TryGetValue(textSnapshot, out sourceText))
