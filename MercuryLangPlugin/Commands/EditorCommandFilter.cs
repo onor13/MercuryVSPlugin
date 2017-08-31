@@ -81,7 +81,7 @@ namespace MercuryLangPlugin.Commands
                 if (m_nextTarget != null)
                 {
                     EnvDTE80.DTE2 dte = Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
-                    if (dte == null || dte.ActiveDocument == null || dte.ActiveDocument.Object() == null || !(dte.ActiveDocument.Object() is TextDocument))
+                    if (dte != null && dte.ActiveDocument != null && dte.ActiveDocument.Object() != null && (dte.ActiveDocument.Object() is TextDocument))
                     {
                         MercuryVSPackage.ParsedCache.setDirty(dte.ActiveDocument.FullName);
                     }
