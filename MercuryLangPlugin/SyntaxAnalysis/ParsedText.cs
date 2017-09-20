@@ -67,32 +67,39 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             return lines;
         }
 
-        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> completionsAvailableFromOutside = null;
-
-        public IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> DeclarationsAvailableFromOutside
+        private HashSet<string> declarationsAvailableFromOutside;
+        public HashSet<string> DeclarationsAvailableFromOutside
         {
             get
             {
-                if (completionsAvailableFromOutside == null)
+                if (declarationsAvailableFromOutside != null)
                 {
-                    completionsAvailableFromOutside = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>(GetCompletions(interfaceDeclarations));
+                    return declarationsAvailableFromOutside;
+                   
                 }
-                return completionsAvailableFromOutside;
+                declarationsAvailableFromOutside = GetCompletions(interfaceDeclarations);
+                foreach (string import in Imports)
+                {
+                    declarationsAvailableFromOutside.Add(import);
+                }
+                return declarationsAvailableFromOutside;
             }
         }
 
-        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> completionsAvailableFromInside = null;
-
-        public IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> DeclarationsAvailableFromInside
+        private HashSet<string> declarationsAvailableFromInside;
+        public IEnumerable<string> DeclarationsAvailableFromInside
         {
             get
             {
-                if (completionsAvailableFromInside == null)
+                if (declarationsAvailableFromInside == null)
                 {
-                    completionsAvailableFromInside = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>(GetCompletions(interfaceDeclarations));
-                    completionsAvailableFromInside.AddRange(DeclarationsAvailableFromOutside);
+                    declarationsAvailableFromInside = DeclarationsAvailableFromOutside;
+                    foreach(string completion in GetCompletions(implementationDeclarations))
+                    {
+                        declarationsAvailableFromInside.Add(completion);
+                    }
                 }
-                return completionsAvailableFromInside;
+                return declarationsAvailableFromInside;
             }
         }
 
@@ -135,7 +142,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             return false;
         }
 
-        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> GetCompletions(HashSet<MercuryToken> tokens)
+        private HashSet<string> GetCompletions(HashSet<MercuryToken> tokens)
         {
             List<Microsoft.VisualStudio.Language.Intellisense.Completion> completions = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
             HashSet<string> strCompletions = new HashSet<string>();
@@ -145,12 +152,8 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                 {
                     strCompletions.Add(token.Value);
                 }
-            }
-            foreach (var completion in strCompletions)
-            {
-                completions.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(completion, completion, completion, null, null));
-            }
-            return completions;
+            }          
+            return strCompletions;
         }
 
         private class MercuryParser
@@ -250,7 +253,6 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                                                 {
                                                     declarations.Add(currToken);
                                                 }
-
                                             }
                                         }
                                     }

@@ -13,7 +13,7 @@ namespace MercuryLangPlugin.Completion
     {
         private CompletionSourceProvider sourceProvider;
         private ITextBuffer textBuffer;
-        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> compList;
+       
 
         public MercuryCompletion(CompletionSourceProvider provider, ITextBuffer textBuffer)
         {
@@ -50,12 +50,13 @@ namespace MercuryLangPlugin.Completion
                     strList.Add(token.Value);
                 }
             }
-            compList = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
-
+                  
             string fileFullPath;
+            HashSet<string> completions = new HashSet<string>();
             ParsedText importParsedText;
             if (currentToken.Type == MercuryTokenType.Dot && currentTokenIdx > 0)
             {
+               
                 MercuryToken beforeDot = parsedText.Tokens[currentTokenIdx - 1];
                 if (!string.IsNullOrWhiteSpace(beforeDot.Value))
                 {
@@ -65,7 +66,10 @@ namespace MercuryLangPlugin.Completion
                         {
                             if (MercuryVSPackage.ParsedCache.GetFromImportName(beforeDot.Value, out fileFullPath, out importParsedText))
                             {
-                                compList.AddRange(importParsedText.DeclarationsAvailableFromOutside);
+                                foreach(string c in importParsedText.DeclarationsAvailableFromOutside)
+                                {
+                                   completions.Add(c);
+                                }                               
                             }
                             break;
                         }
@@ -75,7 +79,7 @@ namespace MercuryLangPlugin.Completion
                         "ModuleDeclarations",
                         this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
                             session),
-                        compList,
+                        Convert(completions),
                         null));
                     return;
                 }
@@ -86,24 +90,35 @@ namespace MercuryLangPlugin.Completion
                 {
                     if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
                     {
-                        compList.AddRange(importParsedText.DeclarationsAvailableFromOutside);
+                        foreach(string c in importParsedText.DeclarationsAvailableFromOutside)
+                        {
+                            completions.Add(c);
+                        }
                     }
                 }
-
             }
-            compList.AddRange(parsedText.DeclarationsAvailableFromInside);
-            foreach (string str in strList)
+            foreach(string c in parsedText.DeclarationsAvailableFromInside)
             {
-                compList.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(str, str, str, null, null));
-            }
+                completions.Add(c);
+            }          
 
             completionSets.Add(new CompletionSet(
                 "Tokens",    // the non-localized title of the tab 
                 "Tokens",    // the display title of the tab
                 this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
                     session),
-                compList,
+                Convert(completions),
                 null));
+        }
+
+        private List<Microsoft.VisualStudio.Language.Intellisense.Completion> Convert(HashSet<string> completions)
+        {
+            var resultList = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
+            foreach(string completion in completions)
+            {
+                resultList.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(completion, completion, completion, null, null));
+            }
+            return resultList;
         }
 
         private ITrackingSpan FindTokenSpanAtPosition(ITrackingPoint point, ICompletionSession session)
