@@ -52,7 +52,7 @@ namespace MercuryLangPlugin.Completion
             }
                   
             string fileFullPath;
-            HashSet<string> completions = new HashSet<string>();
+            HashSet<string> completions = new HashSet<string>(strList);
             ParsedText importParsedText;
             if (currentToken.Type == MercuryTokenType.Dot && currentTokenIdx > 0)
             {
