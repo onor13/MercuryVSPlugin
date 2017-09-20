@@ -23,9 +23,9 @@ namespace MercuryLangPlugin.Completion
 
         void ICompletionSource.AugmentCompletionSession(ICompletionSession session, IList<CompletionSet> completionSets)
         {
-            ParsedText parsedText = MercuryVSPackage.ParsedCache.Get(MercuryVSPackage.TextCache.Get(textBuffer.CurrentSnapshot));
+            var parsedText = MercuryVSPackage.ParsedCache.Get(MercuryVSPackage.TextCache.Get(textBuffer.CurrentSnapshot));
             var triggerPoint = (SnapshotPoint)session.GetTriggerPoint(textBuffer.CurrentSnapshot);
-            SortedSet<string> strList = new SortedSet<string>(Keywords.GetMercuryKeywords());
+            var strList = new SortedSet<string>(Keywords.GetMercuryKeywords());
 
             MercuryToken currentToken = new MercuryToken()
             {
@@ -65,7 +65,7 @@ namespace MercuryLangPlugin.Completion
                         {
                             if (MercuryVSPackage.ParsedCache.GetFromImportName(beforeDot.Value, out fileFullPath, out importParsedText))
                             {
-                                compList.AddRange(importParsedText.CompletionsAvailableFromOutside);
+                                compList.AddRange(importParsedText.DeclarationsAvailableFromOutside);
                             }
                             break;
                         }
@@ -86,12 +86,12 @@ namespace MercuryLangPlugin.Completion
                 {
                     if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
                     {
-                        compList.AddRange(importParsedText.CompletionsAvailableFromOutside);
+                        compList.AddRange(importParsedText.DeclarationsAvailableFromOutside);
                     }
                 }
 
             }
-            compList.AddRange(parsedText.CompletionsAvailableFromOutside);
+            compList.AddRange(parsedText.DeclarationsAvailableFromInside);
             foreach (string str in strList)
             {
                 compList.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(str, str, str, null, null));

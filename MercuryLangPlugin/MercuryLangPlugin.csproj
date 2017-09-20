@@ -68,7 +68,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="MercuryVSPackage.cs" />
-    <Compile Include="SyntaxAnalysis\ParseTreeCache.cs" />
+    <Compile Include="Cache\ParseTreeCache.cs" />
     <Compile Include="Providers\BraceMatchingTaggerProvider.cs" />
     <Compile Include="Highlight\HighlightSameWord.cs" />
     <Compile Include="Highlight\MercuryClassifier.cs" />
@@ -77,11 +77,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\CompletionProvider.cs" />
     <Compile Include="Providers\MClassifierProvider.cs" />
-    <Compile Include="SyntaxAnalysis\MercuryLibraries.cs" />
+    <Compile Include="Cache\MercuryLibraries.cs" />
     <Compile Include="SyntaxAnalysis\MercuryToken.cs" />
     <Compile Include="SyntaxAnalysis\ParsedText.cs" />
     <Compile Include="Text\SourceText.cs" />
-    <Compile Include="Text\SourceTextCache.cs" />
+    <Compile Include="Cache\SourceTextCache.cs" />
     <Compile Include="Text\SourceTextLine.cs" />
     <Compile Include="Tools.cs" />
   </ItemGroup>

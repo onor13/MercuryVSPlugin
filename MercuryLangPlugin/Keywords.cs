@@ -16,6 +16,7 @@ namespace MercuryLangPlugin
             Declaration,
             Foreign,
             ForeignMode,
+            Implementation,
             Import,
             Keyword,
             Pragma,
@@ -99,7 +100,7 @@ namespace MercuryLangPlugin
 
             //I
             { "if", KeywordType.Logical },
-            { "implementation", KeywordType.None },
+            { "implementation", KeywordType.Implementation },
             { "import_module", KeywordType.Import },
             { "impure", KeywordType.Purity },
             { "impure_true", KeywordType.Logical},
