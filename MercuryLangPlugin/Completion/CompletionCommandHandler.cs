@@ -76,7 +76,7 @@ namespace MercuryLangPlugin.Completion
             //pass along the command so the char is added to the buffer 
             int retVal = m_nextCommandHandler.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
             bool handled = false;
-            if ((!typedChar.Equals(char.MinValue) && char.IsLetterOrDigit(typedChar)) || typedChar == 46)
+            if ((!typedChar.Equals(char.MinValue) && (char.IsLetterOrDigit(typedChar)) || typedChar == 46 || typedChar=='_'))
             {
                 if (m_session == null || m_session.IsDismissed) // If there is no active session, bring up completion
                 {
