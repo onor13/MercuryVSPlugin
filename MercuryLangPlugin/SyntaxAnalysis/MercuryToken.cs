@@ -6,6 +6,9 @@ namespace MercuryLangPlugin.SyntaxAnalysis
         None,
         ThreeDashesArrow, // --->
         NewLine,
+        LeftParanthesis,
+        RightParenthesis,
+        TypeModeSpecifier,
         Decl,
         Dot,
         Comment,

@@ -17,7 +17,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
     {
         private int lineNb = 0;
         private int currentPosition = 0;
-        
+
         private LineContinuationInfo PreviousLine { get; set; }
 
         public LineContinuationInfo ContinuationInfo { get; private set; }
@@ -49,9 +49,9 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
         public IEnumerable<MercuryToken> ColorableItems()
         {
-            foreach(var token in Tokens())
+            foreach (var token in Tokens())
             {
-                if(token.Type == MercuryTokenType.Comment || 
+                if (token.Type == MercuryTokenType.Comment ||
                    token.Type == MercuryTokenType.Keyword ||
                    token.Type == MercuryTokenType.StringLiteral ||
                    token.Type == MercuryTokenType.Variable)
@@ -89,7 +89,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                         };
                         break;
                     }
-                    else if (Line[currentPosition] == '\r' || Line[currentPosition] == '\n')                                                
+                    else if (Line[currentPosition] == '\r' || Line[currentPosition] == '\n')
                     {
                         int savedStartPos = currentPosition;
                         SkipNewLine();
@@ -117,18 +117,72 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             EndColumn = currentPosition
                         };
                     }
-                    else if(currentPosition + 1 < LineLength && Line[currentPosition] ==':' && Line[currentPosition + 1] == '-')
+                    else if (Line[currentPosition] == ';')
+                    {
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.Semicolon,
+                            LineNumber = lineNb,
+                            StartColumn = currentPosition,
+                            EndColumn = currentPosition
+                        };
+                    }
+                    else if (Line[currentPosition] == '(')
+                    {
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.LeftParanthesis,
+                            LineNumber = lineNb,
+                            StartColumn = currentPosition,
+                            EndColumn = currentPosition
+                        };
+                    }
+                    else if (Line[currentPosition] == ')')
+                    {
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.RightParenthesis,
+                            LineNumber = lineNb,
+                            StartColumn = currentPosition,
+                            EndColumn = currentPosition
+                        };
+                    }
+                    else if (currentPosition + 1 < LineLength && Line[currentPosition] == ':' && Line[currentPosition + 1] == ':')
+                    {
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.TypeModeSpecifier,
+                            LineNumber = lineNb,
+                            StartColumn = currentPosition,
+                            EndColumn = currentPosition + 1
+                        };
+                        ++currentPosition;
+                    }
+                    else if (currentPosition + 3 < LineLength &&
+                        Line[currentPosition] == '-' && Line[currentPosition + 1] == '-' &&
+                        Line[currentPosition + 2] == '-' && Line[currentPosition + 3] == '>')
+                    {
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.ThreeDashesArrow,
+                            LineNumber = lineNb,
+                            StartColumn = currentPosition,
+                            EndColumn = currentPosition + 3
+                        };
+                        currentPosition = currentPosition + 3;
+                    }
+                    else if (currentPosition + 1 < LineLength && Line[currentPosition] == ':' && Line[currentPosition + 1] == '-')
                     {
                         yield return new MercuryToken()
                         {
                             Type = MercuryTokenType.Decl,
                             LineNumber = lineNb,
                             StartColumn = currentPosition,
-                            EndColumn = currentPosition + 1                     
+                            EndColumn = currentPosition + 1
                         };
                         ++currentPosition;
                     }
-                    else if (char.IsUpper(Line[currentPosition]) || Line[currentPosition]=='_')
+                    else if (char.IsUpper(Line[currentPosition]) || Line[currentPosition] == '_')
                     {
                         int savedStartPos = currentPosition;
                         ++currentPosition;
@@ -138,7 +192,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             Type = MercuryTokenType.Variable,
                             LineNumber = lineNb,
                             StartColumn = savedStartPos,
-                            EndColumn = currentPosition                          
+                            EndColumn = currentPosition
                         };
                         char[] identifier = new char[token.EndColumn - token.StartColumn + 1];
                         Array.Copy(Line, savedStartPos, identifier, 0, identifier.Length);
@@ -147,7 +201,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             Type = MercuryTokenType.Variable,
                             LineNumber = lineNb,
                             StartColumn = savedStartPos,
-                            EndColumn = currentPosition,                       
+                            EndColumn = currentPosition,
                             Value = new string(identifier)
                         };
                     }
@@ -161,7 +215,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                         token.LineNumber = lineNb;
                         token.StartColumn = savedStartPos;
                         token.EndColumn = currentPosition;
-                    
+
                         token.Value = new String(Line, savedStartPos, identifierLength);
                         if (Keywords.IsMercuryKeyword(token.Value))
                         {
@@ -188,21 +242,21 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
         private bool NotEndOfLiteralString()
         {
-            if(currentPosition < LineLength)
+            if (currentPosition < LineLength)
             {
-                if(Line[currentPosition] != '"')
+                if (Line[currentPosition] != '"')
                 {
                     return true;
                 }
                 else
                 {
                     int nextPos = currentPosition + 1;
-                    if(nextPos < LineLength && Line[nextPos] == '"')
+                    if (nextPos < LineLength && Line[nextPos] == '"')
                     {
                         ++currentPosition;
                         return true;
-                    }                    
-                }           
+                    }
+                }
             }
             return false;
         }
@@ -213,7 +267,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             {
                 ++currentPosition;
             }
-            if(PreviousLine == LineContinuationInfo.StringLiteral)
+            if (PreviousLine == LineContinuationInfo.StringLiteral)
             {
                 PreviousLine = LineContinuationInfo.None;
             }
@@ -260,12 +314,12 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
         private void AdvanceToTheEndOfdentifier()
         {
-            while(currentPosition < LineLength && (char.IsLetterOrDigit(Line[currentPosition]) || Line[currentPosition] == '_'))
+            while (currentPosition < LineLength && (char.IsLetterOrDigit(Line[currentPosition]) || Line[currentPosition] == '_'))
             {
                 ++currentPosition;
             }
             --currentPosition;
-            
+
         }
 
         private void SkipNewLine()
