@@ -13,7 +13,7 @@ namespace MercuryLangPlugin.Completion
     {
         private CompletionSourceProvider sourceProvider;
         private ITextBuffer textBuffer;
-       
+
 
         public MercuryCompletion(CompletionSourceProvider provider, ITextBuffer textBuffer)
         {
@@ -44,19 +44,33 @@ namespace MercuryLangPlugin.Completion
                 {
                     currentToken = token;
                     currentTokenIdx = i;
+                    break;
                 }
+            }
+            //Loop till the end of current stmt
+            for (int i = currentTokenIdx; i < parsedText.Tokens.Length && parsedText.Tokens[i].Type != MercuryTokenType.Dot; ++i)
+            {
+                MercuryToken token = parsedText.Tokens[i];
                 if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
                 {
                     strList.Add(token.Value);
                 }
             }
-                  
+            //loop till the end of the previous statement
+            for (int i = currentTokenIdx; i >= 0 && parsedText.Tokens[i].Type != MercuryTokenType.Dot; --i)
+            {
+                MercuryToken token = parsedText.Tokens[i];
+                if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
+                {
+                    strList.Add(token.Value);
+                }
+            }
+
             string fileFullPath;
             HashSet<string> completions = new HashSet<string>(strList);
             ParsedText importParsedText;
             if (currentToken.Type == MercuryTokenType.Dot && currentTokenIdx > 0)
             {
-               
                 MercuryToken beforeDot = parsedText.Tokens[currentTokenIdx - 1];
                 if (!string.IsNullOrWhiteSpace(beforeDot.Value))
                 {
@@ -66,10 +80,10 @@ namespace MercuryLangPlugin.Completion
                         {
                             if (MercuryVSPackage.ParsedCache.GetFromImportName(beforeDot.Value, out fileFullPath, out importParsedText))
                             {
-                                foreach(string c in importParsedText.DeclarationsAvailableFromOutside)
+                                foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
                                 {
-                                   completions.Add(c);
-                                }                               
+                                    completions.Add(c);
+                                }
                             }
                             break;
                         }
@@ -90,17 +104,17 @@ namespace MercuryLangPlugin.Completion
                 {
                     if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
                     {
-                        foreach(string c in importParsedText.DeclarationsAvailableFromOutside)
+                        foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
                         {
                             completions.Add(c);
                         }
                     }
                 }
             }
-            foreach(string c in parsedText.DeclarationsAvailableFromInside)
+            foreach (string c in parsedText.DeclarationsAvailableFromInside)
             {
                 completions.Add(c);
-            }          
+            }
 
             completionSets.Add(new CompletionSet(
                 "Tokens",    // the non-localized title of the tab 
@@ -114,7 +128,7 @@ namespace MercuryLangPlugin.Completion
         private List<Microsoft.VisualStudio.Language.Intellisense.Completion> Convert(HashSet<string> completions)
         {
             var resultList = new List<Microsoft.VisualStudio.Language.Intellisense.Completion>();
-            foreach(string completion in completions)
+            foreach (string completion in completions)
             {
                 resultList.Add(new Microsoft.VisualStudio.Language.Intellisense.Completion(completion, completion, completion, null, null));
             }
