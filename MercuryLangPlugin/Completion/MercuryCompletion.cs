@@ -48,7 +48,7 @@ namespace MercuryLangPlugin.Completion
                 }
             }
             //Loop till the end of current stmt
-            for (int i = currentTokenIdx; i < parsedText.Tokens.Length && parsedText.Tokens[i].Type != MercuryTokenType.Dot; ++i)
+            for (int i = currentTokenIdx; i < parsedText.Tokens.Length && !ParsedText.EndOfStmt(i, parsedText.Tokens); ++i)
             {
                 MercuryToken token = parsedText.Tokens[i];
                 if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
@@ -57,7 +57,7 @@ namespace MercuryLangPlugin.Completion
                 }
             }
             //loop till the end of the previous statement
-            for (int i = currentTokenIdx; i >= 0 && parsedText.Tokens[i].Type != MercuryTokenType.Dot; --i)
+            for (int i = currentTokenIdx; i >= 0 && !ParsedText.EndOfStmt(i, parsedText.Tokens); --i)
             {
                 MercuryToken token = parsedText.Tokens[i];
                 if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))

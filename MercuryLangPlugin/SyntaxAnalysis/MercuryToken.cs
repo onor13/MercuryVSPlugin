@@ -5,6 +5,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
     {
         None,
         ThreeDashesArrow, // --->
+        WhiteSpaces,
         NewLine,
         LeftParanthesis,
         RightParenthesis,

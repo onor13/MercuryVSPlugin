@@ -120,6 +120,20 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             return FindDeclarationFromImports(name, out declarationToken, out fileFullPath);
         }
 
+        public static bool EndOfStmt(int pos, MercuryToken[] tokens)
+        {
+            if (pos < tokens.Length && tokens[pos].Type == MercuryTokenType.Dot)
+            {
+                ++pos;
+                if (pos < tokens.Length)
+                {
+                    return (tokens[pos].Type == MercuryTokenType.WhiteSpaces || tokens[pos].Type == MercuryTokenType.NewLine) ? true : false;
+                }
+                return true;
+            }
+            return false;
+        }
+
         private bool FindDeclarationFromImports(string name, out MercuryToken declarationToken, out string fileFullPath)
         {
             ParsedText importParsedText;
@@ -203,128 +217,146 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                     if (currToken.Type == MercuryTokenType.Decl)
                     {
                         pos = NextRelevantPosition(pos, tokens);
-                        if (pos < tokens.Length)
+                        if (pos >= tokens.Length)
                         {
-                            currToken = tokens[pos];
-                            if (currToken.Type == MercuryTokenType.Keyword && currToken.Value != null)
+                            return;
+                        }
+
+                        currToken = tokens[pos];
+                        if (currToken.Type == MercuryTokenType.Keyword && currToken.Value != null)
+                        {
+                            if (Keywords.GetType(currToken.Value) == KeywordType.Import)
                             {
-                                if (Keywords.GetType(currToken.Value) == KeywordType.Import)
+                                pos = NextRelevantPosition(pos, tokens);
+                                if (pos < tokens.Length)
                                 {
-                                    pos = NextRelevantPosition(pos, tokens);
-                                    if (pos < tokens.Length)
+                                    currToken = tokens[pos];
+                                    if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
                                     {
-                                        currToken = tokens[pos];
-                                        if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
-                                        {
-                                            imports.Add(currToken.Value);
-                                        }
+                                        imports.Add(currToken.Value);
                                     }
-                                }
-                                else if (Keywords.GetType(currToken.Value) == KeywordType.Declaration)
-                                {
-                                    if (currToken.Value.Equals("module"))
-                                    {
-                                        ++pos;
-                                        if (pos < tokens.Length)
-                                        {
-                                            moduleName = tokens[pos].Value;
-                                        }
-                                    }
-                                    else if (currToken.Value.Equals("type"))
-                                    {
-                                        pos = NextRelevantPosition(pos, tokens);
-                                        if (pos >= tokens.Length)
-                                        {
-                                            return;
-                                        }
-                                        currToken = tokens[pos];
-
-                                        if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
-                                        {
-                                            declarations.Add(currToken);
-                                            pos = NextRelevantPosition(pos, tokens);
-                                            if (pos + 2 < tokens.Length && tokens[pos].Type == MercuryTokenType.ThreeDashesArrow)
-                                            {
-                                                pos = NextRelevantPosition(pos, tokens);
-                                                if (pos >= tokens.Length)
-                                                {
-                                                    return;
-                                                }
-                                                currToken = tokens[pos];
-                                                if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
-                                                {
-                                                    declarations.Add(currToken);
-                                                    pos = NextRelevantPosition(pos, tokens);
-                                                    while (pos < tokens.Length)
-                                                    {
-                                                        if (tokens[pos].Type == MercuryTokenType.Dot)
-                                                        {
-                                                            break;
-                                                        }
-                                                        if (tokens[pos].Type == MercuryTokenType.Semicolon)
-                                                        {
-                                                            pos = NextRelevantPosition(pos, tokens);
-                                                            if (pos < tokens.Length && tokens[pos].Type == MercuryTokenType.Identifier &&
-                                                                !string.IsNullOrEmpty(tokens[pos].Value))
-                                                            {
-                                                                declarations.Add(tokens[pos]);
-                                                            }
-                                                        }
-                                                        pos = NextRelevantPosition(pos, tokens);
-                                                        //TODO support cases like
-                                                       //:- type employee
-                                                       //       --->employee(
-                                                       //               name:: string,
-                                                       //               age:: int,
-                                                       //               department:: string).
-                                                       //Requires extending declaration to more than a simple Token.
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                    }
-                                    else if (currToken.Value.Equals("typeclass"))
-                                    {
-                                        pos = NextRelevantPosition(pos, tokens);
-                                        if (pos >= tokens.Length)
-                                        {
-                                            return;
-                                        }
-                                        declarations.Add(tokens[pos]);
-                                        pos = NextRelevantPosition(pos, tokens);
-                                        //TODO implement the rest;
-                                    }
-                                    else
-                                    {
-                                        if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value) && !currToken.Value.Equals("main"))
-                                        {
-                                            if (moduleName != null && currToken.Value == moduleName)
-                                            {
-                                                ++pos;
-                                                currToken = tokens[pos];
-                                                if ((pos + 1 < tokens.Length) && tokens[pos].Type == MercuryTokenType.Dot)
-                                                {
-                                                    pos = NextRelevantPosition(pos, tokens);
-                                                    if (pos < tokens.Length)
-                                                    {
-                                                        currToken = tokens[pos];
-                                                        if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
-                                                        {
-                                                            declarations.Add(currToken);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                declarations.Add(currToken);
-                                            }
-                                        }
-                                    }
-
                                 }
                             }
+                            else if (Keywords.GetType(currToken.Value) == KeywordType.Declaration)
+                            {
+                                if (currToken.Value.Equals("module"))
+                                {
+                                    ++pos;
+                                    if (pos < tokens.Length)
+                                    {
+                                        moduleName = tokens[pos].Value;
+                                    }
+                                }
+                                else if (currToken.Value.Equals("type"))
+                                {
+                                    pos = NextRelevantPosition(pos, tokens);
+                                    if (pos >= tokens.Length)
+                                    {
+                                        return;
+                                    }
+                                    currToken = tokens[pos];
+
+                                    if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
+                                    {
+                                        declarations.Add(currToken);
+                                        pos = NextRelevantPosition(pos, tokens);
+                                        if (pos + 2 < tokens.Length && tokens[pos].Type == MercuryTokenType.ThreeDashesArrow)
+                                        {
+                                            pos = NextRelevantPosition(pos, tokens);
+                                            if (pos >= tokens.Length)
+                                            {
+                                                return;
+                                            }
+                                            currToken = tokens[pos];
+                                            if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
+                                            {
+                                                declarations.Add(currToken);
+                                                pos = NextRelevantPosition(pos, tokens);
+                                                while (pos < tokens.Length && !EndOfStmt(pos, tokens))
+                                                {
+                                                    if (tokens[pos].Type == MercuryTokenType.Semicolon)
+                                                    {
+                                                        pos = NextRelevantPosition(pos, tokens);
+                                                        if (pos < tokens.Length && tokens[pos].Type == MercuryTokenType.Identifier &&
+                                                            !string.IsNullOrEmpty(tokens[pos].Value))
+                                                        {
+                                                            declarations.Add(tokens[pos]);
+                                                        }
+                                                    }
+                                                    pos = NextRelevantPosition(pos, tokens);
+                                                    //TODO support cases like
+                                                    //:- type employee
+                                                    //       --->employee(
+                                                    //               name:: string,
+                                                    //               age:: int,
+                                                    //               department:: string).
+                                                    //Requires extending declaration to more than a simple Token.
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                                else if (currToken.Value.Equals("typeclass"))
+                                {
+                                    pos = NextRelevantPosition(pos, tokens);
+                                    if (pos >= tokens.Length)
+                                    {
+                                        return;
+                                    }
+                                    declarations.Add(tokens[pos]);
+                                    pos = NextRelevantPosition(pos, tokens);
+                                    while (pos < tokens.Length && !EndOfStmt(pos, tokens))
+                                    {
+                                        if (tokens[pos].Type == MercuryTokenType.Keyword &&
+                                            ("pred".Equals(tokens[pos].Value) || "func".Equals(tokens[pos].Value)))
+                                        {
+                                            pos = NextRelevantPosition(pos, tokens);
+                                            if (pos < tokens.Length && tokens[pos].Type == MercuryTokenType.Identifier &&
+                                                            !string.IsNullOrEmpty(tokens[pos].Value))
+                                            {
+                                                declarations.Add(tokens[pos]);
+                                            }
+                                        }
+                                        pos = NextRelevantPosition(pos, tokens);
+                                    }
+                                }
+                                else
+                                {
+                                    pos = NextRelevantPosition(pos, tokens);
+                                    if (pos >= tokens.Length)
+                                    {
+                                        return;
+                                    }
+                                    currToken = tokens[pos];
+                                    if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value) && !currToken.Value.Equals("main"))
+                                    {
+                                        if (moduleName != null && currToken.Value == moduleName)
+                                        {
+                                            ++pos;
+                                            currToken = tokens[pos];
+                                            if ((pos + 1 < tokens.Length) && tokens[pos].Type == MercuryTokenType.Dot)
+                                            {
+                                                pos = NextRelevantPosition(pos, tokens);
+                                                if (pos < tokens.Length)
+                                                {
+                                                    currToken = tokens[pos];
+                                                    if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
+                                                    {
+                                                        declarations.Add(currToken);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            declarations.Add(currToken);
+                                        }
+                                    }
+                                }
+
+                            }
+
                         }
                     }
                 }
@@ -333,7 +365,10 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
             private int SkipNotRelevantTokens(int pos, MercuryToken[] tokens)
             {
-                while (pos < tokens.Length && (tokens[pos].Type == MercuryTokenType.Comment || tokens[pos].Type == MercuryTokenType.NewLine))
+                while (pos < tokens.Length &&
+                    (tokens[pos].Type == MercuryTokenType.Comment ||
+                    tokens[pos].Type == MercuryTokenType.NewLine ||
+                    tokens[pos].Type == MercuryTokenType.WhiteSpaces))
                 {
                     ++pos;
                 }
