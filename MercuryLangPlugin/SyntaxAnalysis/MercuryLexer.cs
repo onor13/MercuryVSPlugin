@@ -127,7 +127,8 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             Type = MercuryTokenType.Dot,
                             LineNumber = lineNb,
                             StartColumn = currentPosition,
-                            EndColumn = currentPosition
+                            EndColumn = currentPosition,
+                            Value = "."
                         };
                     }
                     else if (Line[currentPosition] == ';')

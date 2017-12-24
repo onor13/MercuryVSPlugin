@@ -228,14 +228,21 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             if (Keywords.GetType(currToken.Value) == KeywordType.Import)
                             {
                                 pos = NextRelevantPosition(pos, tokens);
-                                if (pos < tokens.Length)
+                                List<string> importTokens = new List<string>();
+                                while(!EndOfStmt(pos, tokens))
                                 {
                                     currToken = tokens[pos];
-                                    if (currToken.Type == MercuryTokenType.Identifier && !string.IsNullOrEmpty(currToken.Value))
+                                    if (!string.IsNullOrEmpty(currToken.Value))
                                     {
-                                        imports.Add(currToken.Value);
+                                        importTokens.Add(currToken.Value);
                                     }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                    pos = NextRelevantPosition(pos, tokens);
                                 }
+                                imports.Add(string.Join("", importTokens).Replace("'", ""));
                             }
                             else if (Keywords.GetType(currToken.Value) == KeywordType.Declaration)
                             {
