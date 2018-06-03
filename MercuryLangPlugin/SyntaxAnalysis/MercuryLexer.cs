@@ -66,10 +66,6 @@ namespace MercuryLangPlugin.SyntaxAnalysis
         public IEnumerable<MercuryToken> Tokens()
         {
             ContinuationInfo = LineContinuationInfo.None;
-            if (PreviousLine == LineContinuationInfo.None)
-            {
-                SkipWhiteSpaces();
-            }
             while (currentPosition < LineLength)
             {
                 if (PreviousLine == LineContinuationInfo.StringLiteral)
@@ -78,7 +74,24 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                 }
                 else
                 {
-                    if (Line[currentPosition] == '%')
+                    if (char.IsWhiteSpace(Line[currentPosition]))
+                    {
+                        int savedPos = currentPosition;
+                        ++currentPosition;
+                        while (currentPosition < Line.Length && char.IsWhiteSpace(Line[currentPosition]))
+                        {
+                            ++currentPosition;
+                        }
+                        --currentPosition;
+                        yield return new MercuryToken()
+                        {
+                            Type = MercuryTokenType.WhiteSpaces,
+                            LineNumber = lineNb,
+                            StartColumn = savedPos,
+                            EndColumn = currentPosition
+                        };
+                    }
+                    else if (Line[currentPosition] == '%')
                     {
                         yield return new MercuryToken()
                         {
@@ -114,7 +127,8 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             Type = MercuryTokenType.Dot,
                             LineNumber = lineNb,
                             StartColumn = currentPosition,
-                            EndColumn = currentPosition
+                            EndColumn = currentPosition,
+                            Value = "."
                         };
                     }
                     else if (Line[currentPosition] == ';')
@@ -230,13 +244,16 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
                     }
                 }
-
                 ++currentPosition;
-                SkipWhiteSpaces();
-
             }
 
-
+            yield return new MercuryToken()
+            {
+                Type = MercuryTokenType.NewLine,
+                LineNumber = lineNb,
+                StartColumn = currentPosition,
+                EndColumn = currentPosition
+            };
             yield break;
         }
 
@@ -291,19 +308,6 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                     StartColumn = localStartPosition,
                     EndColumn = LineLength
                 };
-            }
-        }
-
-        /// <summary>
-        /// Advance until a non space char is reached
-        /// </summary>
-        /// <param name="currentPosition">position in the current line</param>
-        /// <returns>new position</returns>
-        private void SkipWhiteSpaces()
-        {
-            while (currentPosition < Line.Length && char.IsWhiteSpace(Line[currentPosition]))
-            {
-                ++currentPosition;
             }
         }
 
