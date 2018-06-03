@@ -33,18 +33,28 @@ namespace MercuryLangPlugin.Commands
 
         public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
+            if(nCmdID == (uint)VSConstants.VSStd2KCmdID.COMMENT_BLOCK)
+            {
+                CommentCommand.CommentSelection(m_textView.Selection);              
+                return (int)VSConstants.S_OK;
+            }
+            if (nCmdID == (uint)VSConstants.VSStd2KCmdID.UNCOMMENT_BLOCK)
+            {
+                CommentCommand.UncommentSelection(m_textView.Selection);
+                return (int)VSConstants.S_OK;
+            }
             if (pguidCmdGroup == VSConstants.CMDSETID.StandardCommandSet97_guid && nCmdID == (uint)VSConstants.VSStd97CmdID.GotoDefn)
             {
                 string currentPredicate = GetTokenAtCurrPosition();
 
                 if (string.IsNullOrWhiteSpace(currentPredicate))
-                    return (int)VSConstants.S_OK;
+                    return VSConstants.S_OK;
 
                 EnvDTE80.DTE2 dte = Package.GetGlobalService(typeof(DTE)) as EnvDTE80.DTE2;
 
                 if (dte == null || dte.ActiveDocument == null || dte.ActiveDocument.Object() == null || !(dte.ActiveDocument.Object() is TextDocument))
                 {
-                    return (int)VSConstants.S_OK;
+                    return VSConstants.S_OK;
                 }
                 string fileFullPath;
                 ParsedText parsedText = MercuryVSPackage.ParsedCache.GetFromFullPath(dte.ActiveDocument.FullName);
@@ -61,20 +71,19 @@ namespace MercuryLangPlugin.Commands
                     }
 
                     ((TextSelection)dte.ActiveDocument.Selection).MoveToLineAndOffset(AdjustLineNumber(declarationToken.LineNumber), AdjustOffset(declarationToken.EndColumn));
-                    return (int)VSConstants.S_OK;
+                    return VSConstants.S_OK;
                 }
-                return (int)VSConstants.S_OK;
+                return VSConstants.S_OK;
             }
             else if (pguidCmdGroup == VSConstants.CMDSETID.StandardCommandSet97_guid && nCmdID == (uint)VSConstants.VSStd97CmdID.FindReferences)
             {
                 string token = GetTokenAtCurrPosition();
 
                 if (string.IsNullOrWhiteSpace(token))
-                    return (int)VSConstants.S_OK;
+                    return VSConstants.S_OK;
 
                 FindAllRefs(token);
                 return VSConstants.S_OK;
-
             }
             else
             {
@@ -94,6 +103,22 @@ namespace MercuryLangPlugin.Commands
 
         public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
         {
+            if (pguidCmdGroup == typeof(VSConstants.VSStd2KCmdID).GUID)
+            {
+                for (int i = 0; i < cCmds; i++)
+                {
+                    switch ((VSConstants.VSStd2KCmdID)prgCmds[i].cmdID)
+                    {
+                        case VSConstants.VSStd2KCmdID.OUTLN_COLLAPSE_TO_DEF:
+                        case VSConstants.VSStd2KCmdID.COMMENT_BLOCK:
+                        case VSConstants.VSStd2KCmdID.COMMENTBLOCK:
+                        case VSConstants.VSStd2KCmdID.UNCOMMENT_BLOCK:
+                        case VSConstants.VSStd2KCmdID.UNCOMMENTBLOCK:
+                            prgCmds[i].cmdf = (uint)(OLECMDF.OLECMDF_ENABLED | OLECMDF.OLECMDF_SUPPORTED);
+                            return VSConstants.S_OK;
+                    }
+                }
+            }
             if (pguidCmdGroup == VSConstants.CMDSETID.StandardCommandSet97_guid &&
                 (prgCmds[0].cmdID == (uint)VSConstants.VSStd97CmdID.GotoDefn || prgCmds[0].cmdID == (uint)VSConstants.VSStd97CmdID.FindReferences))
             {

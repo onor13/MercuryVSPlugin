@@ -57,6 +57,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Commands\CommandFilterProvider.cs" />
+    <Compile Include="Commands\CommentCommand.cs" />
     <Compile Include="Commands\EditorCommandFilter.cs" />
     <Compile Include="Completion\CompletionCommandHandler.cs" />
     <Compile Include="Completion\CompletionHandlerProvider.cs" />
