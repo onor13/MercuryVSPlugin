@@ -47,6 +47,11 @@ namespace MercuryLangPlugin.Completion
                     break;
                 }
             }
+
+            if(currentToken.Type == MercuryTokenType.Comment || currentToken.Type == MercuryTokenType.StringLiteral)
+            {
+                return;
+            }
             //Loop till the end of current stmt
             for (int i = currentTokenIdx; i < parsedText.Tokens.Length && !ParsedText.EndOfStmt(i, parsedText.Tokens); ++i)
             {
