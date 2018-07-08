@@ -52,23 +52,36 @@ namespace MercuryLangPlugin.Completion
             {
                 return;
             }
-            //Loop till the end of current stmt
-            for (int i = currentTokenIdx; i < parsedText.Tokens.Length && !ParsedText.EndOfStmt(i, parsedText.Tokens); ++i)
+
+            if (currentToken.Type == MercuryTokenType.Variable)
             {
-                MercuryToken token = parsedText.Tokens[i];
-                if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
+                HashSet<string> variables = new HashSet<string>();
+                //Loop till the end of current stmt
+                for (int i = currentTokenIdx; i < parsedText.Tokens.Length && !ParsedText.EndOfStmt(i, parsedText.Tokens); ++i)
                 {
-                    strList.Add(token.Value);
+                    MercuryToken token = parsedText.Tokens[i];
+                    if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
+                    {
+                        variables.Add(token.Value);
+                    }
                 }
-            }
-            //loop till the end of the previous statement
-            for (int i = currentTokenIdx; i >= 0 && !ParsedText.EndOfStmt(i, parsedText.Tokens); --i)
-            {
-                MercuryToken token = parsedText.Tokens[i];
-                if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
+                //loop till the end of the previous statement
+                for (int i = currentTokenIdx; i >= 0 && !ParsedText.EndOfStmt(i, parsedText.Tokens); --i)
                 {
-                    strList.Add(token.Value);
+                    MercuryToken token = parsedText.Tokens[i];
+                    if (token.EndColumn > token.StartColumn && token.Type == MercuryTokenType.Variable && !string.IsNullOrWhiteSpace(token.Value))
+                    {
+                        variables.Add(token.Value);
+                    }
                 }
+                completionSets.Add(new CompletionSet(
+                   "Variables",    // the non-localized title of the tab 
+                   "Variables",    // the display title of the tab
+                   this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
+                       session),
+                   Convert(variables),
+                   null));
+                return;
             }
 
             string fileFullPath;
