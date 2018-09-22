@@ -65,7 +65,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
 
         public IEnumerable<MercuryToken> Tokens()
         {
-            ContinuationInfo = LineContinuationInfo.None;
+            ContinuationInfo = LineLength == 0 ? PreviousLine : LineContinuationInfo.None;
             while (currentPosition < LineLength)
             {
                 if (PreviousLine == LineContinuationInfo.StringLiteral)
@@ -114,7 +114,7 @@ namespace MercuryLangPlugin.SyntaxAnalysis
                             EndColumn = currentPosition
                         };
                     }
-                    else if (Line[currentPosition] == '"')
+                    else if (Line[currentPosition] == '"' && (currentPosition == 0 || Line[currentPosition - 1] != '\\'))
                     {
                         int savedStartPos = currentPosition;
                         ++currentPosition;
@@ -257,39 +257,33 @@ namespace MercuryLangPlugin.SyntaxAnalysis
             yield break;
         }
 
-        private bool NotEndOfLiteralString()
+        private bool EndOfLiteralString()
         {
-            if (currentPosition < LineLength)
+            if (currentPosition >= LineLength)
             {
-                if (Line[currentPosition] != '"')
-                {
-                    return true;
-                }
-                else
-                {
-                    int nextPos = currentPosition + 1;
-                    if (nextPos < LineLength && Line[nextPos] == '"')
-                    {
-                        ++currentPosition;
-                        return true;
-                    }
-                }
+                return true;
+            }
+            if (Line[currentPosition] == '"' &&
+                (currentPosition == 0 || Line[currentPosition - 1] != '\\'))
+            {
+                return true;
             }
             return false;
         }
 
         private MercuryToken HandleStringLiteral(int localStartPosition)
         {
-            while (NotEndOfLiteralString())
+            while (!EndOfLiteralString())
             {
                 ++currentPosition;
             }
-            if (PreviousLine == LineContinuationInfo.StringLiteral)
-            {
-                PreviousLine = LineContinuationInfo.None;
-            }
+
             if (currentPosition < LineLength)
             {
+                if (PreviousLine == LineContinuationInfo.StringLiteral)
+                {
+                    PreviousLine = LineContinuationInfo.None;
+                }
                 return new MercuryToken()
                 {
                     Type = MercuryTokenType.StringLiteral,

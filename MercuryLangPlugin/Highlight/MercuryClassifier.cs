@@ -39,7 +39,7 @@ namespace MercuryLangPlugin.Highlight
             SubscribeEvents();
             classificationTypeRegistry = classificationTypeRegistryService;
             this.dte = dte;
-        }       
+        }
 
         public IList<ClassificationSpan> GetClassificationSpans(SnapshotSpan span)
         {
@@ -57,7 +57,6 @@ namespace MercuryLangPlugin.Highlight
                 var tmpLine = span.Snapshot.GetLineFromLineNumber(currentLineNb).GetText();
                 var previousLineContinuation = currentLineNb > 0 ? lineStates[currentLineNb - 1] : LineContinuationInfo.None;
 
-
                 var line = span.Snapshot.GetLineFromPosition(span.Start.Position);
                 int lineNumber = line.LineNumber;
                 int columnIndex = span.Start.Position - line.Start.Position;
@@ -65,20 +64,22 @@ namespace MercuryLangPlugin.Highlight
 
                 foreach (var colorableToken in lexer.ColorableItems())
                 {
-                    //var tokenSpan = new SnapshotSpan(span.Snapshot, new Span(colorableToken.Start, Math.Min(span.Snapshot.Length - colorableToken.Start, colorableToken.Length)));
-                    var tokenSpan = new SnapshotSpan(span.Snapshot, span.Start.Position + colorableToken.StartColumn, colorableToken.EndColumn - colorableToken.StartColumn + 1);
-                    var tmpSpan = new ClassificationSpan(tokenSpan, GetClassificationType(colorableToken.Type));
-                    classificationSpans.Add(tmpSpan);
+                    int tokenStart = span.Start.Position + colorableToken.StartColumn;
+                    int tokenLength = colorableToken.EndColumn - colorableToken.StartColumn + 1;
+                    if (tokenStart + tokenLength <= span.Snapshot.Length) // ELSE Should never happen, but just in case
+                    {
+                        classificationSpans.Add(new ClassificationSpan(new SnapshotSpan(span.Snapshot, span.Start.Position + colorableToken.StartColumn, colorableToken.EndColumn - colorableToken.StartColumn + 1),
+                            GetClassificationType(colorableToken.Type)));
+                    }
                 }
 
                 lineStates[currentLineNb] = lexer.ContinuationInfo;
-
             }
             if (lexer != null && lexer.ContinuationInfo != savedLastLineContinuationInfo && (endLine + 1) < lineStates.Count)
             {
                 MyForceReclassifyLine(endLine + 1);
             }
-          
+
             return classificationSpans;
         }
 
