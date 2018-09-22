@@ -48,7 +48,7 @@ namespace MercuryLangPlugin.Completion
                 }
             }
 
-            if(currentToken.Type == MercuryTokenType.Comment || currentToken.Type == MercuryTokenType.StringLiteral)
+            if (currentToken.Type == MercuryTokenType.Comment || currentToken.Type == MercuryTokenType.StringLiteral)
             {
                 return;
             }
@@ -87,48 +87,31 @@ namespace MercuryLangPlugin.Completion
             string fileFullPath;
             HashSet<string> completions = new HashSet<string>(strList);
             ParsedText importParsedText;
-            if (currentToken.Type == MercuryTokenType.Dot && currentTokenIdx > 0)
+
+            var moduleStrCompletions = possibleModuleDeclarationCompletion(currentTokenIdx, parsedText);
+            if (moduleStrCompletions != null)
             {
-                MercuryToken beforeDot = parsedText.Tokens[currentTokenIdx - 1];
-                if (!string.IsNullOrWhiteSpace(beforeDot.Value))
-                {
-                    foreach (string import in parsedText.Imports)
-                    {
-                        if (import.Equals(beforeDot.Value))
-                        {
-                            if (MercuryVSPackage.ParsedCache.GetFromImportName(beforeDot.Value, out fileFullPath, out importParsedText))
-                            {
-                                foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
-                                {
-                                    completions.Add(c);
-                                }
-                            }
-                            break;
-                        }
-                    }
-                    completionSets.Add(new CompletionSet(
-                        "ModuleDeclarations",
-                        "ModuleDeclarations",
-                        this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
-                            session),
-                        Convert(completions),
-                        null));
-                    return;
-                }
+                completionSets.Add(new CompletionSet(
+                    "ModuleDeclarations",
+                    "ModuleDeclarations",
+                    this.FindTokenSpanAtPosition(session.GetTriggerPoint(this.textBuffer),
+                        session),
+                    Convert(moduleStrCompletions),
+                    null));
+                return;
             }
-            else
+
+            foreach (string import in parsedText.Imports)
             {
-                foreach (string import in parsedText.Imports)
+                if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
                 {
-                    if (MercuryVSPackage.ParsedCache.GetFromImportName(import, out fileFullPath, out importParsedText))
+                    foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
                     {
-                        foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
-                        {
-                            completions.Add(c);
-                        }
+                        completions.Add(c);
                     }
                 }
             }
+
             foreach (string c in parsedText.DeclarationsAvailableFromInside)
             {
                 completions.Add(c);
@@ -141,6 +124,60 @@ namespace MercuryLangPlugin.Completion
                     session),
                 Convert(completions),
                 null));
+        }
+
+        //User typed someModule. or someModule.some => need completions from someModule.
+        private HashSet<String> possibleModuleDeclarationCompletion(int currentTokenIdx, ParsedText parsedText)
+        {
+
+            MercuryToken currentToken = parsedText.Tokens[currentTokenIdx];
+            if (currentTokenIdx < 1)
+            {
+                return null;
+            }
+            if (currentToken.Type == MercuryTokenType.Dot)
+            {
+                return moduleDeclarations(parsedText.Tokens[currentTokenIdx - 1].Value, parsedText);
+            }
+            if (currentTokenIdx < 2)
+            {
+                return null;
+            }
+            var previousToken = parsedText.Tokens[currentTokenIdx - 1];
+            var beforePrevious = parsedText.Tokens[currentTokenIdx - 2];
+            if (previousToken.Type == MercuryTokenType.Dot)
+            {
+                return moduleDeclarations(beforePrevious.Value, parsedText);
+            }
+
+            return null;
+        }
+
+        private HashSet<String> moduleDeclarations(string module, ParsedText parsedText)
+        {
+            if (string.IsNullOrWhiteSpace(module))
+            {
+                return null;
+            }
+
+            foreach (string import in parsedText.Imports)
+            {
+                if (import.Equals(module))
+                {
+                    string fileFullPath;
+                    ParsedText importParsedText;
+                    var completions = new HashSet<string>();
+                    if (MercuryVSPackage.ParsedCache.GetFromImportName(module, out fileFullPath, out importParsedText))
+                    {
+                        foreach (string c in importParsedText.DeclarationsAvailableFromOutside)
+                        {
+                            completions.Add(c);
+                        }
+                    }
+                    return completions;
+                }
+            }
+            return null;
         }
 
         private List<Microsoft.VisualStudio.Language.Intellisense.Completion> Convert(HashSet<string> completions)
