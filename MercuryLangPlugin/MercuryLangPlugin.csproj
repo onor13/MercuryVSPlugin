@@ -73,6 +73,10 @@
     <Compile Include="Providers\BraceMatchingTaggerProvider.cs" />
     <Compile Include="Highlight\HighlightSameWord.cs" />
     <Compile Include="Highlight\MercuryClassifier.cs" />
+    <Compile Include="Providers\MercuryQuickInfoController.cs" />
+    <Compile Include="Providers\MercuryQuickInfoControllerProvider.cs" />
+    <Compile Include="Providers\MercuryQuickInfoSource.cs" />
+    <Compile Include="Providers\MercuryQuickInfoSourceProvider.cs" />
     <Compile Include="SyntaxAnalysis\MercuryLexer.cs" />
     <Compile Include="Predefined.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
